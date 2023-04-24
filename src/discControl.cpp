@@ -11,7 +11,10 @@ discControl::Mode request = discControl::Mode::Idle;
 
 void cataUpdater() {
     lemlib::FAPID cataPID(0, 0, CATA_KP, 0, CATA_KD, "cata");
+    leftGeneralMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    rightGeneralMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
+    int fireStart = 0;
     while (true) {
         // get the position of the catapult
         int angle = cataRot.get_angle();
@@ -24,14 +27,33 @@ void cataUpdater() {
             // fire the catapult
             case discControl::Firing: {
                 // move the catapult down
-                leftGeneralMotor.move(-127);
-                rightGeneralMotor.move(-127);
+                if (!fireStart) {
+                    leftGeneralMotor.move(-127);
+                    rightGeneralMotor.move(-127);
+                }
                 // check if the catapult has fired yet
-                if (angle < 5000 || angle > 32000) { mode = discControl::Loading; }
+                if ((angle < 5000 || angle > CATA_LOADING_ANGLE + 300) && !fireStart) {
+                    fireStart = pros::millis();
+                    leftGeneralMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+                    rightGeneralMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+                    leftGeneralMotor.move(0);
+                    rightGeneralMotor.move(0);
+                }
+                // fire delay
+                if (fireStart != 0 && pros::millis() - CATA_FIRE_DELAY > fireStart) {
+                    fireStart = 0;
+                    mode = discControl::Loading;
+                    leftGeneralMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+                    rightGeneralMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+                }
                 break;
             }
             // load the catapult
             case discControl::Loading: {
+                // deactivate piston boost
+                // activate piston boost
+                pistonBoost1.set_value(false);
+                pistonBoost2.set_value(false);
                 // check if the catapult is down
                 if ((angle < CATA_LOADING_ANGLE + 50 && angle > 20000)) {
                     mode = discControl::Idle;
@@ -39,10 +61,15 @@ void cataUpdater() {
                 }
                 // update the PID
                 float output = cataPID.update(CATA_LOADING_ANGLE, angle);
-                output -= CATA_FEEDFORWARD;
+                output += CATA_FEEDFORWARD;
                 // move the catapult
-                leftGeneralMotor.move(output);
-                rightGeneralMotor.move(output);
+                if (angle < 10000) {
+                    leftGeneralMotor.move(-127);
+                    rightGeneralMotor.move(-127);
+                } else {
+                    leftGeneralMotor.move(output);
+                    rightGeneralMotor.move(output);
+                }
                 break;
             }
             // stop the intake
@@ -57,8 +84,6 @@ void cataUpdater() {
             case discControl::Intaking: {
                 leftGeneralMotor.move(127);
                 rightGeneralMotor.move(127);
-                pros::lcd::print(0, "left wattage: %f", leftGeneralMotor.get_power());
-                pros::lcd::print(1, "right wattage: %f", rightGeneralMotor.get_power());
                 break;
             }
             // idle
@@ -66,13 +91,14 @@ void cataUpdater() {
                 leftGeneralMotor.move(0);
                 rightGeneralMotor.move(0);
                 break;
-            }
+            };
         }
         pros::delay(10);
     }
 }
 
 void discControl::initialize() {
+    // prevent tomfoolery with the task being initialized twice
     if (cataTask == nullptr) cataTask = new pros::Task([=]() { cataUpdater(); });
 }
 
