@@ -54,8 +54,8 @@ void opcontrol() {
             discControl::stop();
         }
 
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) pistonBoost1.set_value(1);
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) pistonBoost2.set_value(1);
+        if (master.get_digital_new_press(SWITCH_TO_CATA_BUTTON)) discControl::switchToCata();
+        if (master.get_digital_new_press(SWITCH_TO_DRIVE_BUTTON)) discControl::switchToDrive();
 
         // control the drivetrain
         float rightX = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
