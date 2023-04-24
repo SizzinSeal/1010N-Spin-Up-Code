@@ -75,7 +75,11 @@ void opcontrol() {
         // set the motor speeds
         leftDrive.move(left);
         rightDrive.move(right);
-
+        // move the general motors if the pto is in drive mode
+        if (discControl::getMode() == discControl::Mode::Driving) {
+            leftGeneralMotor.move(left);
+            rightGeneralMotor.move(right);
+        }
         // delay to save resources
         pros::delay(10);
     }

@@ -44,9 +44,13 @@ void accelerate(int time, int accel, int decel) {
 
 void leftStart() {
     chassis.setPose(-62, 32, 90);
+    leftDrive.move(-1);
+    rightDrive.move(-1);
+    discControl::intake();
+    pros::delay(500);
     accelerate(50, 10, 1);
     chassis.turnTo(53, 56, 2000);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 7; i++) {
         leftDrive.move(i * 10);
         rightDrive.move(i * 10);
         pros::delay(10);
@@ -75,16 +79,13 @@ void leftStart() {
 
 void leftAuto() {
     leftStart();
-    chassis.moveTo(-59, -7, 3000);
+    chassis.moveTo(-55, -12, 3000);
     chassis.turnTo(-22, -15, 1000);
     discControl::intake();
-    chassis.moveTo(-22, -15, 5000, 40);
+    chassis.moveTo(-22, -12, 5000, 40);
     chassis.moveTo(-37, -5, 2000);
     chassis.turnTo(48, 58, 1000);
-    leftDrive.move(127);
-    rightDrive.move(127);
-    boost(100, 1, 1);
-    pros::delay(150);
+    boost(30, 10, 10);
     leftDrive.move(-10);
     rightDrive.move(-10);
 }
@@ -92,16 +93,15 @@ void leftAuto() {
 void AWP() {
     leftStart();
     chassis.turnTo(12, -26, 2000);
-    pros::delay(500);
     discControl::intake();
     chassis.moveTo(12, -26, 6000, 50);
     chassis.turnTo(53, 53, 2000);
-    boost(20, 5, 5);
-    pros::delay(500);
-    chassis.moveTo(40, -58, 2000);
+    boost(40, 5, 5);
+    discControl::intake();
+    chassis.moveTo(40, -40, 2000);
 }
 
 /**
  * @brief runs during the autonomous
  */
-void autonomous() { AWP(); }
+void autonomous() { leftAuto(); }

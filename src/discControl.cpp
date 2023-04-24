@@ -21,11 +21,29 @@ void cataUpdater() {
 
         // update the mode based on the priority of the request
         if (request < mode) mode = request;
-        request = discControl::Idle;
+        // whether to store the request to intake or not
+        else if (!(pros::competition::is_autonomous() && request == discControl::Intaking)) {
+            request = discControl::Idle;
+        }
 
         switch (mode) {
+            // switch to the catapult
+            case discControl::SwitchToCata: {
+                pto.set_value(false);
+                pros::delay(100);
+                mode = discControl::Loading;
+            }
+            case discControl::SwitchToDrive: {
+                pto.set_value(true);
+                leftGeneralMotor.move(0);
+                rightGeneralMotor.move(0);
+                pros::delay(100);
+                mode = discControl::Driving;
+            }
             // fire the catapult
             case discControl::Firing: {
+                // exit if pto is in drive mode
+                if (mode = discControl::Driving) break;
                 // move the catapult down
                 if (!fireStart) {
                     leftGeneralMotor.move(-127);
@@ -50,6 +68,8 @@ void cataUpdater() {
             }
             // load the catapult
             case discControl::Loading: {
+                // exit if pto is in drive mode
+                if (mode = discControl::Driving) break;
                 // deactivate piston boost
                 // activate piston boost
                 pistonBoost1.set_value(false);
@@ -74,6 +94,8 @@ void cataUpdater() {
             }
             // stop the intake
             case discControl::Stop: {
+                // exit if pto is in drive mode
+                if (mode = discControl::Driving) break;
                 leftGeneralMotor.move(0);
                 rightGeneralMotor.move(0);
                 // set the mode to idle
@@ -82,12 +104,16 @@ void cataUpdater() {
             }
             // spin the intake
             case discControl::Intaking: {
+                // exit if pto is in drive mode
+                if (mode = discControl::Driving) break;
                 leftGeneralMotor.move(127);
                 rightGeneralMotor.move(127);
                 break;
             }
             // idle
             case discControl::Idle: {
+                // exit if pto is in drive mode
+                if (mode = discControl::Driving) break;
                 leftGeneralMotor.move(0);
                 rightGeneralMotor.move(0);
                 break;
@@ -101,6 +127,10 @@ void discControl::initialize() {
     // prevent tomfoolery with the task being initialized twice
     if (cataTask == nullptr) cataTask = new pros::Task([=]() { cataUpdater(); });
 }
+
+void discControl::switchToCata() { request = discControl::Mode::SwitchToCata; }
+
+void discControl::switchToDrive() { request = discControl::Mode::SwitchToDrive; }
 
 void discControl::fireCata() { request = discControl::Mode::Firing; }
 

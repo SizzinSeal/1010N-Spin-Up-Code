@@ -2,7 +2,7 @@
 
 namespace discControl {
 enum Mode {
-    SwithToCata = 0,
+    SwitchToCata = 0,
     SwitchToDrive = 1,
     Driving = 2,
     Firing = 3,
@@ -14,6 +14,8 @@ enum Mode {
 
 void initialize();
 void fireCata();
+void switchToCata();
+void switchToDrive();
 void intake();
 void stop();
 Mode getMode();
